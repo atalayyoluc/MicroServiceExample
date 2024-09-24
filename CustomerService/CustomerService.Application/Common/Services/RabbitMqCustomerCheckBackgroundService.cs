@@ -26,15 +26,14 @@ namespace CustomerService.Application.Common.Services
             using var connection = factory.CreateConnection();
             using var channel = connection.CreateModel();
 
-            // Kuyruk tanýmlamasý
+   
             channel.QueueDeclare(queue: "customer_queue", durable: true, exclusive: false, autoDelete: false, arguments: null);
 
             var consumer = new EventingBasicConsumer(channel);
 
-            // Mesaj geldiðinde tetiklenen olay
             consumer.Received += async (model, ea) =>
             {
-                using (var scope = _serviceScopeFactory.CreateScope())  // Scoped servisler için scope oluþturuyoruz
+                using (var scope = _serviceScopeFactory.CreateScope())  
                 {
                     var userRepository = scope.ServiceProvider.GetRequiredService<IUserRepository>();
 

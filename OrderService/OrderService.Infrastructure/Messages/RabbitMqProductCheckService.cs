@@ -15,14 +15,14 @@ public class RabbitMqProductCheckService : IRabbitMqProductCheckService
         using var connection = factory.CreateConnection();
         using var channel = connection.CreateModel();
 
-        // ReplyTo adında geçici bir kuyruk oluşturuyoruz
+
         var replyQueueName = channel.QueueDeclare().QueueName;
         var consumer = new EventingBasicConsumer(channel);
         var correlationId = Guid.NewGuid().ToString();
 
         var tcs = new TaskCompletionSource<string>();
 
-        // Cevap mesajını işleyen kısım
+
         consumer.Received += (model, ea) =>
         {
             if (ea.BasicProperties.CorrelationId == correlationId)
@@ -32,22 +32,21 @@ public class RabbitMqProductCheckService : IRabbitMqProductCheckService
             }
         };
 
-        // RabbitMQ'dan gelen cevabı dinlemeye başlıyoruz
+
         channel.BasicConsume(consumer: consumer, queue: replyQueueName, autoAck: true);
 
         var props = channel.CreateBasicProperties();
         props.ReplyTo = replyQueueName;
         props.CorrelationId = correlationId;
 
-        // OrderRequest nesnesini oluşturuyoruz ve JSON formatına çeviriyoruz
+
         var orderRequest = new OrderRequest { ProductId = productId };
         var message = JsonConvert.SerializeObject(orderRequest);
         var messageBytes = Encoding.UTF8.GetBytes(message);
 
-        // Mesajı RabbitMQ'ya gönderiyoruz
         channel.BasicPublish(exchange: "", routingKey: "product_queue", basicProperties: props, body: messageBytes);
 
-        // Cevap bekleniyor, maksimum 5 saniye bekliyoruz
+
         var timeoutTask = Task.Delay(5000);
         var completedTask = await Task.WhenAny(tcs.Task, timeoutTask);
 
