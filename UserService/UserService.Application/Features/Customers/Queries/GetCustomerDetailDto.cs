@@ -1,4 +1,5 @@
 using CustomerService.Application.Common.Interfaces;
+using CustomerService.Application.Common.Interfaces.Repositories;
 using CustomerService.Domain.Entities;
 using MediatR;
 
@@ -9,16 +10,16 @@ public record GetCustomerDetailQuery
 
 public class GetCustomerDetailQueryHandler : IRequestHandler<GetCustomerDetailQuery, User>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IUserRepository _userRepository;
 
-    public GetCustomerDetailQueryHandler(IApplicationDbContext context)
+    public GetCustomerDetailQueryHandler(IUserRepository userRepository)
     {
-        _context = context;
+        _userRepository = userRepository;
     }
 
     public async Task<User> Handle(GetCustomerDetailQuery query, CancellationToken cancellationToken)
     {
-        var customer = _context.Users.FirstOrDefault(u => u.Id == query.CutomerId);
+        var customer = await _userRepository.GetUserByIdAsync(query.CutomerId);
         if (customer == null)
         {
             throw new Exception("Müþteri bulunamadi");
